@@ -1,6 +1,9 @@
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+//import Pathfinder.PathResult;
 import bonzai.api.Duck;
 import bonzai.api.Entity;
 import bonzai.api.Farmhand;
@@ -23,15 +26,21 @@ public class TheBoss {
 
 	public void process(GameState state){
 		FarmhandList hands = state.getMyFarmhands();
-
-	}
+		Collection<FarmhandAction> actions = new ArrayList<FarmhandAction>(); 
+		for(int i = 0;i<hands.size(); ++i){
+			if(states.get(i) == null || states.get(i) == STATES.NOSTATE){
+				
+			}else if(states.get(i) == STATES.DUCKING)
+				System.out.println("yourmom");
+		}
+	}//end process
 
 	private FarmhandAction doDucking(Integer i, GameState state){
 		Farmhand hand = state.getMyFarmhands().get(i);
 		if(hand.getHeldObject() instanceof Duck){
 			/* Farmhand has duck, run home */
 			//FIXME: If adjacent
-			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),state.getMyBase().getPosition(), state);
+			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),state.getMyBase().getPosition(),state);
 			return hand.move(p.nextNode);
 		}else{ /* Get that duck*/
 			/*If you're by a duck, you get that duck*/						
@@ -43,7 +52,7 @@ public class TheBoss {
 				targets.put(i,getClosestDuck(hand, state));
 			}				
 			/* Continue moving towards the target*/
-			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),targets.get(i).getPosition(), state);
+			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),targets.get(i).getPosition(),state);
 			return hand.move(p.nextNode);
 		}		
 	}
@@ -85,13 +94,14 @@ public class TheBoss {
 	}
 
 	private boolean isAdjacent(int x, int y, int x2, int y2) {
-		return Math.abs(x-x2) <=1 && Math.abs(y-y2) <=1;
+		return Math.abs(x-x2) <= 1 && Math.abs(y-y2) <=1;
 	}
 
 	private void doTaunting(){
-
+		//TODO: taunt everyone
 	}
-
+	
+	
 	/**
 	 * Gets the closest un-targeted duck
 	 * 
