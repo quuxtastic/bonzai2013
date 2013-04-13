@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 //import Pathfinder.PathResult;
@@ -16,6 +17,7 @@ import bonzai.api.list.FarmhandList;
 
 
 public class TheBoss {
+	List<FarmhandState> farmhandStates = new ArrayList<FarmhandState>();
 
 	public TheBoss(GameState state, Pathfinder pathfinder){
 		this.states = new HashMap<Integer,STATES>();
@@ -93,6 +95,8 @@ public class TheBoss {
 						}
 					}
 				}
+				// go on a walk to find a bale
+				
 			}
 		}else{
 			//Am I at the base?
