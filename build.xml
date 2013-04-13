@@ -1,5 +1,5 @@
 <project name="BonzAI2013DevPackage" basedir="." default="runGUI">
-    <property name="AIClass" value="CompetitorAI" />
+    <property name="AIClass" value="MikeAI" />
     <property name="Team" value="[sound of a record scratch]" />
     
     <target name="buildAI">
