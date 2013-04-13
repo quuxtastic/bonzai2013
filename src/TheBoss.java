@@ -175,7 +175,7 @@ public class TheBoss {
 					}
 				}
 				//XXX go on a walk to find a bale
-
+				return fh.move(pathfinder.nextPathNode(fh.getPosition(), new Position(0,0), gs).nextNode);
 			}
 		}else{
 			//Am I at the base?
