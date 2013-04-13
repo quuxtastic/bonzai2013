@@ -1,6 +1,8 @@
+import bonzai.api.Position;
+
 
 public class Pathfinder {
-	PathNode nextPathNode(PathNode cur,PathNode goal) {
+	Position nextPathNode(Position cur,Position goal) {
 		return null;
 	}
 }
