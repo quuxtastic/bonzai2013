@@ -1,6 +1,6 @@
 <project name="BonzAI2013DevPackage" basedir="." default="runGUI">
     <property name="AIClass" value="CompetitorAI" />
-    <property name="Team" value="Team1" />
+    <property name="Team" value="[sound of a record scratch]" />
     
     <target name="buildAI">
         <mkdir dir="bin" />
