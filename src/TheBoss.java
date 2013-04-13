@@ -28,6 +28,7 @@ public class TheBoss {
 			if(states.get(i) == null || states.get(i) == STATES.NOSTATE){
 				
 			}else if(states.get(i) == STATES.DUCKING)
+				System.out.println("yourmom");
 		}
 	}//end process
 
@@ -62,7 +63,7 @@ public class TheBoss {
 	}
 
 	private void doTaunting(){
-
+		//TODO: taunt everyone
 	}
 
 	/**
