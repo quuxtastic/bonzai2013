@@ -1,9 +1,8 @@
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-//import Pathfinder.PathResult;
 import bonzai.api.Duck;
+import bonzai.api.Entity;
 import bonzai.api.Farmhand;
 import bonzai.api.FarmhandAction;
 import bonzai.api.GameState;
@@ -32,7 +31,7 @@ public class TheBoss {
 		if(hand.getHeldObject() instanceof Duck){
 			/* Farmhand has duck, run home */
 			//FIXME: If adjacent
-			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),state.getMyBase().getPosition());
+			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),state.getMyBase().getPosition(), state);
 			return hand.move(p.nextNode);
 		}else{ /* Get that duck*/
 			/*If you're by a duck, you get that duck*/						
@@ -44,7 +43,7 @@ public class TheBoss {
 				targets.put(i,getClosestDuck(hand, state));
 			}				
 			/* Continue moving towards the target*/
-			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),targets.get(i).getPosition());
+			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),targets.get(i).getPosition(), state);
 			return hand.move(p.nextNode);
 		}		
 	}
@@ -80,6 +79,10 @@ public class TheBoss {
 			}
 		}
 		return fh.shout("I'M STUPID");
+	}
+
+	private boolean isAdjacent(int x, int y, int x2, int y2) {
+		return Math.abs(x-x2) <=1 && Math.abs(y-y2) <=1;
 	}
 
 	private void doTaunting(){
