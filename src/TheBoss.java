@@ -2,7 +2,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
 //import Pathfinder.PathResult;
 import bonzai.api.Duck;
@@ -44,16 +43,14 @@ public class TheBoss {
 			}else if(states.get(i) == STATES.EGGING){
 				//Egging
 				fa = seekItem(i, state, Type.Egg);
-			}else if(getClosestUnownedItem(state.getFarmhands().get(i), state, Type.Egg) != null){
-				states.put(i, STATES.EGGING);
-				fa = seekItem(i, state, Type.Egg);
 			}else{
-				//Baleing
+				//Baleing				
 				fa = doBaleing(i,state);
 			}
 		}
 		return actions;
 	}//end process
+
 
 	/**
 	 * 
@@ -66,8 +63,8 @@ public class TheBoss {
 		//points for egg = duckPoints*0.7
 		double scoreFactor = .7;
 		//get closest of each
-		Duck duck = getClosestUnownedDuck(hand, state);
-		Item item = getClosestUnownedItem(hand, state, Type.Egg);
+		Duck duck = getClosestDuck(hand, state);
+		Item item = getClosestItem(hand, state, Type.Egg);
 
 		Pathfinder.PathResult duckPath = pathfinder.nextPathNode(hand.getPosition(), duck.getPosition(), state);
 		Pathfinder.PathResult eggPath = pathfinder.nextPathNode(hand.getPosition(), item.getPosition(), state);
@@ -99,37 +96,21 @@ public class TheBoss {
 		}else{ 
 			/* Michael, Get that duck*/
 			Duck closestDuck = getClosestDuck(hand, state);
-			if(closestDuck == null && targets.get(i) == null){
+			if(closestDuck == null){
 				/*what duck? I don't see a duck?*/
 				return null;				
 			}else if(isAdjacent(hand.getPosition(), closestDuck.getPosition())){
 				/*If you're by a duck, you get that duck*/
-				targets.remove(getIForDuck(closestDuck));
 				return hand.pickUp(closestDuck);
 			} else if(!targets.containsKey(i)){
 				/*otherwise aquire new target*/
 				targets.put(i,closestDuck);
-			} else if(!targets.get(i).equals(closestDuck) && !targets.containsValue(closestDuck)){
-				log("worker<"+i+">: I like this duck better");
-				targets.put(i, closestDuck);
-			} else if (targets.get(i) == null )
-				targets.put(i, getClosestUnownedDuck(hand, state));
-			
-			if (targets.get(i) == null )
-				return null;
-			
+			}				
+
 			/* Continue moving towards the target*/
 			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),targets.get(i).getPosition(),state);
 			return hand.move(p.nextNode);
-		}
-	}
-
-	private Integer getIForDuck(Duck d){
-		for(Entry<Integer,Duck> e:targets.entrySet()){
-			if(e.getValue().equals(d))
-				return e.getKey();
-		}
-		return Integer.MAX_VALUE;
+		}		
 	}
 
 	private FarmhandAction seekItem(Integer i, GameState state,Type itemType){
@@ -146,30 +127,19 @@ public class TheBoss {
 		}else{ 
 			/* Michael, Get that item*/
 			Item closestItem = getClosestItem(hand, state,itemType);
-			if(closestItem == null && itemTargets.get(i) == null){
-				/*what item? I don't see an item?*/
+			if(closestItem == null){
+				/*what item? I don't see a item?*/
 				return null;				
 			}else if(isAdjacent(hand.getPosition(), closestItem.getPosition())){
 				/*If you're by a item, you get that item*/
-				if(itemTargets.values().contains(closestItem))
-					for(Entry<Integer,Duck> e:targets.entrySet()){
-						if(e.getValue().equals(closestItem))
-							itemTargets.remove(e.getKey());
-					}
 				return hand.pickUp(closestItem);
-			} else if(!itemTargets.containsKey(i)){
+			} else if(!targets.containsKey(i)){
 				/*otherwise aquire new target*/
 				itemTargets.put(i,closestItem);
-			}else if(!itemTargets.get(i).equals(closestItem) && !itemTargets.containsValue(closestItem)){
-				log("worker<"+i+">: I like this egg better");
-				itemTargets.put(i, closestItem);
-			}else if(itemTargets.get(i) == null)
-				itemTargets.put(i, getClosestUnownedItem(hand, state, itemType));
+			}				
 
-			if(itemTargets.get(i) == null)
-				return null;
 			/* Continue moving towards the target*/
-			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),itemTargets.get(i).getPosition(),state);
+			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),targets.get(i).getPosition(),state);
 			return hand.move(p.nextNode);
 		}		
 	}
@@ -187,6 +157,18 @@ public class TheBoss {
 		if(item != null && item.getType() == Type.Pitchfork){
 			// do I have a bale?
 			if(item.getFull()){
+				//go home kid
+				return fh.move(pathfinder.nextPathNode(fh.getPosition(), myBase.getPosition(), gs).nextNode);
+			}else{
+				//1800getabale
+				for(int i = 0; i < gs.getFarmWidth(); i++){
+					for(int j = 0; j < gs.getFarmHeight(); j++){
+						if(gs.getTile(j, i).getTileState().equals(Tile.State.Straw)){
+							return fh.move(pathfinder.nextPathNode(fh.getPosition(), myBase.getPosition(), gs).nextNode);
+						}
+					}
+				}
+				// go on a walk to find a bale
 
 			}
 		}else{
@@ -242,28 +224,6 @@ public class TheBoss {
 		}
 		return bestDuck;
 	}
-	
-	/**
-	 * Gets the closest duck
-	 * 
-	 * @param hand
-	 * @param state
-	 * @return
-	 */
-	private Duck getClosestUnownedDuck(Farmhand hand, GameState state){
-		Duck bestDuck = null;
-		double bestC = Double.MAX_VALUE;
-		Position pos = hand.getPosition(); //Hey! Where's your hand?
-		for(Duck d:state.getMyDucks()){
-			Position duckPosition = d.getPosition();
-			double c = this.pathfinder.nextPathNode(pos, duckPosition, state).cost;
-			if(c < bestC && !targets.containsValue(d)){
-				bestDuck = d;
-				bestC = c;
-			}
-		}
-		return bestDuck;
-	}
 
 	private Item getClosestItem(Farmhand hand, GameState state, Type itemType){
 		Item bestItem = null;
@@ -280,21 +240,6 @@ public class TheBoss {
 		return bestItem;
 	}
 	
-	private Item getClosestUnownedItem(Farmhand hand, GameState state, Type itemType){
-		Item bestItem = null;
-		double bestC = Double.MAX_VALUE;
-		Position pos = hand.getPosition(); //Hey! Where's your hand?
-		for(Item d:state.getItems()){
-			Position itemPosition = d.getPosition();
-			double c = this.pathfinder.nextPathNode(pos, itemPosition, state).cost;
-			if(c < bestC && d.getType().equals(itemType) && !itemTargets.containsValue(d)){
-				bestItem = d;
-				bestC = c;
-			}
-		}
-		return bestItem;
-	}
-
 	private void log(String s){
 		System.out.println(s);
 	}//end log
