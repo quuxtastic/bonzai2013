@@ -174,9 +174,10 @@ public class TheBoss {
 		}		
 	}
 
-	private FarmhandAction doBaleing(Integer i, GameState gs){
+	private FarmhandAction doBaleing(Integer fhIndex, GameState gs){
+
 		Tile myBase = gs.getMyBase();
-		Farmhand fh = gs.getFarmhands().get(i);
+		Farmhand fh = gs.getFarmhands().get(fhIndex);
 		Entity holding = fh.getHeldObject();
 		Item item = null;
 		if(holding instanceof Item){
