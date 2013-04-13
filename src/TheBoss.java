@@ -29,6 +29,9 @@ public class TheBoss {
 		Collection<FarmhandAction> actions = new ArrayList<FarmhandAction>(); 
 		for(int i = 0;i<hands.size(); ++i){
 			if(states.get(i) == null || states.get(i) == STATES.NOSTATE){
+				//TODO:Calculate closest duck vs. closest egg
+				
+				//otherwise doBaleing
 				
 			}else if(states.get(i) == STATES.DUCKING)
 				System.out.println("yourmom");
@@ -39,18 +42,24 @@ public class TheBoss {
 		Farmhand hand = state.getMyFarmhands().get(i);
 		if(hand.getHeldObject() instanceof Duck){
 			/* Farmhand has duck, run home */
-			//FIXME: If adjacent
+			if(isAdjacent(hand.getPosition(),state.getMyBase().getPosition()))
+				hand.dropItem(state.getMyBase().getPosition());
 			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),state.getMyBase().getPosition(),state);
 			return hand.move(p.nextNode);
-		}else{ /* Get that duck*/
-			/*If you're by a duck, you get that duck*/						
-			if(true){
-				//FIXME - MIKE: If adjacent
-			}
-			if(!targets.containsKey(i)){
-				/*aquire new target*/
+		}else{ 
+			/* Michael, Get that duck*/
+			Duck closestDuck = getClosestDuck(hand, state);
+			if(closestDuck == null){
+				/*what duck? I don't see a duck?*/
+				return null;				
+			}else if(isAdjacent(hand.getPosition(), closestDuck.getPosition())){
+				/*If you're by a duck, you get that duck*/
+				return hand.pickUp(closestDuck);
+			} else if(!targets.containsKey(i)){
+				/*otherwise aquire new target*/
 				targets.put(i,getClosestDuck(hand, state));
 			}				
+			
 			/* Continue moving towards the target*/
 			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),targets.get(i).getPosition(),state);
 			return hand.move(p.nextNode);
@@ -87,7 +96,7 @@ public class TheBoss {
 			}
 		}else{
 			//Am I at the base?
-			if(isAdjacent(myBase.getX(), myBase.getY(), fh.getX(), fh.getY())){
+			if(isAdjacent(myBase.getPosition(), fh.getPosition())){
 				//Am I holding something? Try to sell it( or put the duck down)
 				if(item != null){
 					return fh.sell();
@@ -106,6 +115,10 @@ public class TheBoss {
 		return fh.shout("I'M STUPID");
 	}
 
+	private boolean isAdjacent(Position p1, Position p2){
+		return isAdjacent(p1.getX(),p1.getY(), p2.getX(),p2.getY());
+	}
+	
 	private boolean isAdjacent(int x, int y, int x2, int y2) {
 		return Math.abs(x-x2) <= 1 && Math.abs(y-y2) <=1;
 	}
