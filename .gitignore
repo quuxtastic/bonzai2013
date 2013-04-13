@@ -1,0 +1,5 @@
+bin/
+*Out.txt
+*Log.txt
+replays/
+*.jar
