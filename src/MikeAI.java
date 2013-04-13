@@ -16,7 +16,7 @@ public class MikeAI implements AI {
 	public Collection<FarmhandAction> turn(GameState state) {
 		//INIT
 		if(this.theBoss == null) 
-			this.theBoss = new TheBoss(state);
+			this.theBoss = new TheBoss(state,null);
 		
 		
 		

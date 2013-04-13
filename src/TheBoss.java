@@ -1,7 +1,9 @@
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import bonzai.api.Entity;
+//import Pathfinder.PathResult;
+import bonzai.api.Duck;
 import bonzai.api.Farmhand;
 import bonzai.api.FarmhandAction;
 import bonzai.api.GameState;
@@ -12,25 +14,43 @@ import bonzai.api.list.FarmhandList;
 
 
 public class TheBoss {
-	
-	public TheBoss(GameState state){
+
+	public TheBoss(GameState state, Pathfinder pathfinder){
 		this.states = new HashMap<Integer,STATES>();
-		this.pathfinder = new AStarPathfinder(state);
+		this.pathfinder = pathfinder;
 		for (Integer i = 0;i<state.getMyFarmhands().size();++i)
 			states.put(i, STATES.NOSTATE);		
 	}//end constructor
-	
+
 	public void process(GameState state){
 		FarmhandList hands = state.getMyFarmhands();
-		
+
 	}
-	
-	private void doDucking(){
-		
+
+	private FarmhandAction doDucking(Integer i, GameState state){
+		Farmhand hand = state.getMyFarmhands().get(i);
+		if(hand.getHeldObject() instanceof Duck){
+			/* Farmhand has duck, run home */
+			//FIXME: If adjacent
+			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),state.getMyBase().getPosition());
+			return hand.move(p.nextNode);
+		}else{ /* Get that duck*/
+			/*If you're by a duck, you get that duck*/						
+			if(true){
+				//FIXME - MIKE: If adjacent
+			}
+			if(!targets.containsKey(i)){
+				/*aquire new target*/
+				targets.put(i,getClosestDuck(hand, state));
+			}				
+			/* Continue moving towards the target*/
+			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),targets.get(i).getPosition());
+			return hand.move(p.nextNode);
+		}		
 	}
-	
+
 	private void doEgging(){
-		
+
 	}
 	
 	private FarmhandAction doBaleing(Integer i, GameState gs){
@@ -61,19 +81,27 @@ public class TheBoss {
 		}
 		return fh.shout("I'M STUPID");
 	}
-	
+
 	private void doTaunting(){
-		
+
 	}
-	
-	private void doRetreat(){
-		
+
+	/**
+	 * Gets the closest un-targeted duck
+	 * 
+	 * @param hand
+	 * @param state
+	 * @return
+	 */
+	private Duck getClosestDuck(Farmhand hand, GameState state){
+		Duck bestDuck = null;
+		Position pos = hand.getPosition(); //Hey! Where's your hand?
+		for(Duck d:state.getMyDucks()){
+			Position duckPosition = d.getPosition();
+		}
+		return null;
 	}
-	
-	public boolean isAdjacent(int x1, int y1, int x2, int y2){
-		return Math.abs(x1-x2) <=1 && Math.abs(y1-y2) <=1;
-	}
-	
+
 	private enum STATES{
 		NOSTATE,
 		DUCKING,
@@ -81,8 +109,9 @@ public class TheBoss {
 		BALEING,
 		TUANTING,
 		SELLING
-		}
-	
+	}
+
 	private Map<Integer,STATES> states;
+	private Map<Integer,Duck> targets;
 	private Pathfinder pathfinder;
 }
