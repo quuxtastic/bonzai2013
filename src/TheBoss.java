@@ -61,19 +61,29 @@ public class TheBoss {
 
 	}
 	
-	private FarmhandAction doBaleing(Integer i, GameState gs){
+	private FarmhandAction doBaleing(Integer fhIndex, GameState gs){
 		Tile myBase = gs.getMyBase();
-		Farmhand fh = gs.getFarmhands().get(i);
+		Farmhand fh = gs.getFarmhands().get(fhIndex);
 		Entity holding = fh.getHeldObject();
 		Item item = null;
 		if(holding instanceof Item){
 			item = (Item) holding;
 		}
 		// do I have a pitchfork?
-		if(item != null && item.getType() == Item.Type.Pitchfork){
+		if(item != null && item.getType().equals(Item.Type.Pitchfork)){
 			// do I have a bale?
 			if(item.getFull()){
-				
+				//go home kid
+				return fh.move(pathfinder.nextPathNode(fh.getPosition(), myBase.getPosition(), gs).nextNode);
+			}else{
+				//1800getabale
+				for(int i = 0; i < gs.getFarmWidth(); i++){
+					for(int j = 0; j < gs.getFarmHeight(); j++){
+						if(gs.getTile(j, i).getTileState().equals(Tile.State.Straw)){
+							return fh.move(pathfinder.nextPathNode(fh.getPosition(), myBase.getPosition(), gs).nextNode);
+						}
+					}
+				}
 			}
 		}else{
 			//Am I at the base?
@@ -88,6 +98,9 @@ public class TheBoss {
 					//dude, youre getting a pitchfork
 					return fh.purchase(Item.Type.Pitchfork);
 				}
+			}else{
+				// return to base
+				return fh.move(pathfinder.nextPathNode(fh.getPosition(), myBase.getPosition(), gs).nextNode);
 			}
 		}
 		return fh.shout("I'M STUPID");
