@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import bonzai.api.AI;
 //import Pathfinder.PathResult;
 import bonzai.api.Duck;
 import bonzai.api.Entity;
@@ -17,11 +18,11 @@ import bonzai.api.Tile;
 import bonzai.api.list.FarmhandList;
 
 
-public class TheBoss {
+public class TheBoss{
 
-	public TheBoss(GameState state, Pathfinder pathfinder){
+	public TheBoss(GameState state){
 		this.states = new HashMap<Integer,STATES>();
-		this.pathfinder = pathfinder;
+		//this.pathfinder = pathfinder;
 		for (Integer i = 0;i<state.getMyFarmhands().size();++i)
 			states.put(i, STATES.CHILLIN);		
 	}//end constructor
