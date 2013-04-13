@@ -119,7 +119,7 @@ public class TheBoss {
 			/* Farmhand has item, run home */
 			if(isAdjacent(hand.getPosition(),state.getMyBase().getPosition())){
 				hand.dropItem(state.getMyBase().getPosition());
-				log("Got that duck, now for some chillin");
+				log("Got that egg, now for some chillin");
 				states.put(i, STATES.CHILLIN);
 			}
 			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),state.getMyBase().getPosition(),state);
