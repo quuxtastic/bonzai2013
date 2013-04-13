@@ -5,10 +5,13 @@ import java.util.Map;
 
 //import Pathfinder.PathResult;
 import bonzai.api.Duck;
+import bonzai.api.Entity;
 import bonzai.api.Farmhand;
 import bonzai.api.FarmhandAction;
 import bonzai.api.GameState;
+import bonzai.api.Item;
 import bonzai.api.Position;
+import bonzai.api.Tile;
 import bonzai.api.list.FarmhandList;
 
 
@@ -60,15 +63,48 @@ public class TheBoss {
 	private void doEgging(){
 
 	}
+	
+	private FarmhandAction doBaleing(Integer i, GameState gs){
+		Tile myBase = gs.getMyBase();
+		Farmhand fh = gs.getFarmhands().get(i);
+		Entity holding = fh.getHeldObject();
+		Item item = null;
+		if(holding instanceof Item){
+			item = (Item) holding;
+		}
+		// do I have a pitchfork?
+		if(item != null && item.getType() == Item.Type.Pitchfork){
+			// do I have a bale?
+			if(item.getFull()){
+				
+			}
+		}else{
+			//Am I at the base?
+			if(isAdjacent(myBase.getX(), myBase.getY(), fh.getX(), fh.getY())){
+				//Am I holding something? Try to sell it( or put the duck down)
+				if(item != null){
+					return fh.sell();
+				}else if(holding != null){
+					// I've got a duck
+					return fh.dropItem(new Position(myBase.getX(), myBase.getY()));
+				}else{
+					//dude, youre getting a pitchfork
+					return fh.purchase(Item.Type.Pitchfork);
+				}
+			}
+		}
+		return fh.shout("I'M STUPID");
+	}
 
-	private void doBaleing(){
-
+	private boolean isAdjacent(int x, int y, int x2, int y2) {
+		return Math.abs(x-x2) <= 1 && Math.abs(y-y2) <=1;
 	}
 
 	private void doTaunting(){
 		//TODO: taunt everyone
 	}
-
+	
+	
 	/**
 	 * Gets the closest un-targeted duck
 	 * 
