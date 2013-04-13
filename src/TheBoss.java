@@ -22,8 +22,10 @@ public class TheBoss{
 	public TheBoss(GameState state){
 		this.states = new HashMap<Integer,STATES>();
 		//this.pathfinder = pathfinder;
-		for (Integer i = 0;i<state.getMyFarmhands().size();++i)
-			states.put(i, STATES.CHILLIN);		
+		for (Integer i = 0;i<state.getMyFarmhands().size();++i){
+			pathfinders.put(i, new AStarPathfinder(state,state.getMyFarmhands().get(i)));
+			states.put(i, STATES.CHILLIN);
+		}
 	}//end constructor
 
 	public Collection<FarmhandAction> process(GameState state){
@@ -67,8 +69,8 @@ public class TheBoss{
 		Duck duck = getClosestDuck(hand, state);
 		Item item = getClosestItem(hand, state, Type.Egg);
 
-		Pathfinder.PathResult duckPath = pathfinder.nextPathNode(hand.getPosition(), duck.getPosition(), state);
-		Pathfinder.PathResult eggPath = pathfinder.nextPathNode(hand.getPosition(), item.getPosition(), state);
+		Pathfinder.PathResult duckPath = pathfinders.get(i).nextPathNode(hand.getPosition(), duck.getPosition(), state);
+		Pathfinder.PathResult eggPath = pathfinders.get(i).nextPathNode(hand.getPosition(), item.getPosition(), state);
 		double duckScore = (duckPath == null)? 0 : duckPath.cost;
 		double itemScore = (eggPath == null)? 0: eggPath.cost * scoreFactor;
 		if(duckScore == 0 && itemScore == 0){ 
@@ -92,7 +94,7 @@ public class TheBoss{
 				log("Got that duck, now for some chillin");
 				states.put(i, STATES.CHILLIN);
 			}
-			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),state.getMyBase().getPosition(),state);
+			Pathfinder.PathResult p = pathfinders.get(i).nextPathNode(hand.getPosition(),state.getMyBase().getPosition(),state);
 			return hand.move(p.nextNode);
 		}else{ 
 			/* Michael, Get that duck*/
@@ -109,13 +111,35 @@ public class TheBoss{
 			}				
 
 			/* Continue moving towards the target*/
-			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),targets.get(i).getPosition(),state);
+			Pathfinder.PathResult p = pathfinders.get(i).nextPathNode(hand.getPosition(),targets.get(i).getPosition(),state);
 			return hand.move(p.nextNode);
 		}		
 	}
 
 	private FarmhandAction seekItem(Integer i, GameState state,Type itemType){
 		Farmhand hand = state.getMyFarmhands().get(i);
+		if(hand.getHeldObject()!=null && hand.getHeldObject() instanceof Item && ((Item)hand.getHeldObject()).getType().equals(itemType))
+		{	
+			if(state.getTile(hand.getX(), hand.getY()+1).getItem() == null)
+				return hand.dropItem(new Position(hand.getX(), hand.getY()+1));
+			else if(state.getTile(hand.getX(), hand.getY()-1).getItem() == null)
+				return hand.dropItem(new Position(hand.getX(), hand.getY()-1));
+			else if(state.getTile(hand.getX()+1, hand.getY()-1).getItem() == null)
+				return hand.dropItem(new Position(hand.getX()+1, hand.getY()-1));
+			else if(state.getTile(hand.getX()+1, hand.getY()+1).getItem() == null)
+				return hand.dropItem(new Position(hand.getX()+1, hand.getY()+1));
+			else if(state.getTile(hand.getX()-1, hand.getY()-1).getItem() == null)
+				return hand.dropItem(new Position(hand.getX()+1, hand.getY()-1));
+			else if(state.getTile(hand.getX()-1, hand.getY()+1).getItem() == null)
+				return hand.dropItem(new Position(hand.getX()+1, hand.getY()+1));
+			else{
+				states.put(i, STATES.CHILLIN);
+				log("I can't put this thing down soI'm just gonna chill");
+				return hand.shout(FamilyFreindlyExplitives.getRandomExplitive());
+			}
+			
+				
+		}
 		if(hand.getHeldObject() instanceof Item && ((Item)hand.getHeldObject()).getType().equals(itemType)){
 			/* Farmhand has item, run home */
 			if(isAdjacent(hand.getPosition(),state.getMyBase().getPosition())){
@@ -123,7 +147,7 @@ public class TheBoss{
 				log("Got that egg, now for some chillin");
 				states.put(i, STATES.CHILLIN);
 			}
-			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),state.getMyBase().getPosition(),state);
+			Pathfinder.PathResult p = pathfinders.get(i).nextPathNode(hand.getPosition(),state.getMyBase().getPosition(),state);
 			return hand.move(p.nextNode);
 		}else{ 
 			/* Michael, Get that item*/
@@ -140,7 +164,7 @@ public class TheBoss{
 			}				
 
 			/* Continue moving towards the target*/
-			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),targets.get(i).getPosition(),state);
+			Pathfinder.PathResult p = pathfinders.get(i).nextPathNode(hand.getPosition(),targets.get(i).getPosition(),state);
 			return hand.move(p.nextNode);
 		}		
 	}
@@ -164,14 +188,14 @@ public class TheBoss{
 					return fh.sell();
 				}else{
 					//go home kid
-					return fh.move(pathfinder.nextPathNode(fh.getPosition(), myBase.getPosition(), gs).nextNode);
+					return fh.move(getPFForHand(gs, fh).nextPathNode(fh.getPosition(), myBase.getPosition(), gs).nextNode);
 				}
 			}else{
 				//1800getabale
 				for(int i = 0; i < gs.getFarmWidth(); i++){
 					for(int j = 0; j < gs.getFarmHeight(); j++){
 						if(gs.getTile(j, i).getTileState().equals(Tile.State.Straw)){
-							return fh.move(pathfinder.nextPathNode(fh.getPosition(), myBase.getPosition(), gs).nextNode);
+							return fh.move(pathfinders.get(i).nextPathNode(fh.getPosition(), myBase.getPosition(), gs).nextNode);
 						}
 					}
 				}
@@ -223,7 +247,7 @@ public class TheBoss{
 		Position pos = hand.getPosition(); //Hey! Where's your hand?
 		for(Duck d:state.getMyDucks()){
 			Position duckPosition = d.getPosition();
-			double c = this.pathfinder.nextPathNode(pos, duckPosition, state).cost;
+			double c = getPFForHand(state, hand).nextPathNode(pos, duckPosition, state).cost;
 			if(c < bestC){
 				bestDuck = d;
 				bestC = c;
@@ -238,13 +262,17 @@ public class TheBoss{
 		Position pos = hand.getPosition(); //Hey! Where's your hand?
 		for(Item d:state.getItems()){
 			Position itemPosition = d.getPosition();
-			double c = this.pathfinder.nextPathNode(pos, itemPosition, state).cost;
+			double c = getPFForHand(state, hand).nextPathNode(pos, itemPosition, state).cost;
 			if(c < bestC && d.getType().equals(itemType)){
 				bestItem = d;
 				bestC = c;
 			}
 		}
 		return bestItem;
+	}
+	
+	private Pathfinder getPFForHand(GameState state,Farmhand hand){
+		return pathfinders.get((Integer)state.getMyFarmhands().indexOf(hand));
 	}
 	
 	private void log(String s){
@@ -263,5 +291,5 @@ public class TheBoss{
 	private Map<Integer,STATES> states;
 	private Map<Integer,Duck> targets;
 	private Map<Integer,Item> itemTargets;
-	private Pathfinder pathfinder;
+	private Map<Integer,Pathfinder> pathfinders;
 }
