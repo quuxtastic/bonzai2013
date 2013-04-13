@@ -3,8 +3,10 @@ import java.util.Map;
 
 import bonzai.api.Entity;
 import bonzai.api.Farmhand;
+import bonzai.api.FarmhandAction;
 import bonzai.api.GameState;
 import bonzai.api.Item;
+import bonzai.api.Position;
 import bonzai.api.Tile;
 import bonzai.api.list.FarmhandList;
 
@@ -31,7 +33,7 @@ public class TheBoss {
 		
 	}
 	
-	private void doBaleing(Integer i, GameState gs){
+	private FarmhandAction doBaleing(Integer i, GameState gs){
 		Tile myBase = gs.getMyBase();
 		Farmhand fh = gs.getFarmhands().get(i);
 		Entity holding = fh.getHeldObject();
@@ -48,12 +50,16 @@ public class TheBoss {
 		}else{
 			//Am I at the base?
 			if(isAdjacent(myBase.getX(), myBase.getY(), fh.getX(), fh.getY())){
-				//Am I holding something? Try to sell it
+				//Am I holding something? Try to sell it( or put the duck down)
+				if(item != null){
+					return fh.sell();
+				}else if(holding != null){
+					// I've got a duck
+					fh.dropItem(new Position(myBase.getX(), myBase.getY()));
+				}
 			}
 		}
-			
-			
-		
+		return fh.shout("I'M STUPID");
 	}
 	
 	private void doTaunting(){
