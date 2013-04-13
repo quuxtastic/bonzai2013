@@ -74,7 +74,10 @@ public class TheBoss {
 					return fh.sell();
 				}else if(holding != null){
 					// I've got a duck
-					fh.dropItem(new Position(myBase.getX(), myBase.getY()));
+					return fh.dropItem(new Position(myBase.getX(), myBase.getY()));
+				}else{
+					//dude, youre getting a pitchfork
+					return fh.purchase(Item.Type.Pitchfork);
 				}
 			}
 		}
