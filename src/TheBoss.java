@@ -11,6 +11,7 @@ import bonzai.api.Farmhand;
 import bonzai.api.FarmhandAction;
 import bonzai.api.GameState;
 import bonzai.api.Item;
+import bonzai.api.Item.Type;
 import bonzai.api.Position;
 import bonzai.api.Tile;
 import bonzai.api.list.FarmhandList;
@@ -23,21 +24,27 @@ public class TheBoss {
 		this.states = new HashMap<Integer,STATES>();
 		this.pathfinder = pathfinder;
 		for (Integer i = 0;i<state.getMyFarmhands().size();++i)
-			states.put(i, STATES.NOSTATE);		
+			states.put(i, STATES.CHILLIN);		
 	}//end constructor
 
-	public void process(GameState state){
+	public Collection<FarmhandAction> process(GameState state){
 		FarmhandList hands = state.getMyFarmhands();
 		Collection<FarmhandAction> actions = new ArrayList<FarmhandAction>(); 
 		for(int i = 0;i<hands.size(); ++i){
-			if(states.get(i) == null || states.get(i) == STATES.NOSTATE){
+			FarmhandAction fa;
+			if(states.get(i) == null || states.get(i) == STATES.CHILLIN){
 				//TODO:Calculate closest duck vs. closest egg
 				
 				//otherwise doBaleing
 				
-			}else if(states.get(i) == STATES.DUCKING)
-				System.out.println("yourmom");
+			}else if(states.get(i) == STATES.DUCKING){
+			//	 = doDucking(i, state);
+				actions.add(doDucking(i, state));
+			}
+			
+			actions.add(fa);
 		}
+		return actions;
 	}//end process
 
 	private FarmhandAction doDucking(Integer i, GameState state){
@@ -59,7 +66,7 @@ public class TheBoss {
 				return hand.pickUp(closestDuck);
 			} else if(!targets.containsKey(i)){
 				/*otherwise aquire new target*/
-				targets.put(i,getClosestDuck(hand, state));
+				targets.put(i,closestDuck);
 			}				
 			
 			/* Continue moving towards the target*/
@@ -68,20 +75,44 @@ public class TheBoss {
 		}		
 	}
 
-	private void doEgging(){
-
+	private FarmhandAction seekItem(Integer i, GameState state,Type itemType){
+		Farmhand hand = state.getMyFarmhands().get(i);
+		if(hand.getHeldObject() instanceof Item && ((Item)hand.getHeldObject()).getType().equals(itemType)){
+			/* Farmhand has item, run home */
+			if(isAdjacent(hand.getPosition(),state.getMyBase().getPosition()))
+				hand.dropItem(state.getMyBase().getPosition());
+			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),state.getMyBase().getPosition(),state);
+			return hand.move(p.nextNode);
+		}else{ 
+			/* Michael, Get that item*/
+			Item closestItem = getClosestItem(hand, state,itemType);
+			if(closestItem == null){
+				/*what item? I don't see a item?*/
+				return null;				
+			}else if(isAdjacent(hand.getPosition(), closestItem.getPosition())){
+				/*If you're by a item, you get that item*/
+				return hand.pickUp(closestItem);
+			} else if(!targets.containsKey(i)){
+				/*otherwise aquire new target*/
+				itemTargets.put(i,closestItem);
+			}				
+			
+			/* Continue moving towards the target*/
+			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),targets.get(i).getPosition(),state);
+			return hand.move(p.nextNode);
+		}		
 	}
 	
-	private FarmhandAction doBaleing(Integer fhIndex, GameState gs){
+	private FarmhandAction doBaleing(Integer i, GameState gs){
 		Tile myBase = gs.getMyBase();
-		Farmhand fh = gs.getFarmhands().get(fhIndex);
+		Farmhand fh = gs.getFarmhands().get(i);
 		Entity holding = fh.getHeldObject();
 		Item item = null;
 		if(holding instanceof Item){
 			item = (Item) holding;
 		}
 		// do I have a pitchfork?
-		if(item != null && item.getType().equals(Item.Type.Pitchfork)){
+		if(item != null && item.getType() == Type.Pitchfork){
 			// do I have a bale?
 			if(item.getFull()){
 				//go home kid
@@ -109,11 +140,8 @@ public class TheBoss {
 					return fh.dropItem(new Position(myBase.getX(), myBase.getY()));
 				}else{
 					//dude, youre getting a pitchfork
-					return fh.purchase(Item.Type.Pitchfork);
+					return fh.purchase(Type.Pitchfork);
 				}
-			}else{
-				// return to base
-				return fh.move(pathfinder.nextPathNode(fh.getPosition(), myBase.getPosition(), gs).nextNode);
 			}
 		}
 		return fh.shout("I'M STUPID");
@@ -127,13 +155,14 @@ public class TheBoss {
 		return Math.abs(x-x2) <= 1 && Math.abs(y-y2) <=1;
 	}
 
-	private void doTaunting(){
-		//TODO: taunt everyone
+	private void doTaunting(Integer i, GameState state){
+		Farmhand hand = state.getMyFarmhands().get(i);
+		hand.shout(FamilyFreindlyExplitives.getRandomExplitive());
 	}
 	
 	
 	/**
-	 * Gets the closest un-targeted duck
+	 * Gets the closest duck
 	 * 
 	 * @param hand
 	 * @param state
@@ -141,23 +170,45 @@ public class TheBoss {
 	 */
 	private Duck getClosestDuck(Farmhand hand, GameState state){
 		Duck bestDuck = null;
+		double bestC = Double.MAX_VALUE;
 		Position pos = hand.getPosition(); //Hey! Where's your hand?
 		for(Duck d:state.getMyDucks()){
 			Position duckPosition = d.getPosition();
+			double c = this.pathfinder.nextPathNode(pos, duckPosition, state).cost;
+			if(c < bestC){
+				bestDuck = d;
+				bestC = c;
+			}
 		}
-		return null;
+		return bestDuck;
+	}
+	
+	private Item getClosestItem(Farmhand hand, GameState state, Type itemType){
+		Item bestItem = null;
+		double bestC = Double.MAX_VALUE;
+		Position pos = hand.getPosition(); //Hey! Where's your hand?
+		for(Item d:state.getItems()){
+			Position itemPosition = d.getPosition();
+			double c = this.pathfinder.nextPathNode(pos, itemPosition, state).cost;
+			if(c < bestC && d.getType().equals(itemType)){
+				bestItem = d;
+				bestC = c;
+			}
+		}
+		return bestItem;
 	}
 
 	private enum STATES{
-		NOSTATE,
+		CHILLIN,
 		DUCKING,
 		EGGING,
 		BALEING,
 		TUANTING,
-		SELLING
+		RETREATIN
 	}
 
 	private Map<Integer,STATES> states;
 	private Map<Integer,Duck> targets;
+	private Map<Integer,Item> itemTargets;
 	private Pathfinder pathfinder;
 }
