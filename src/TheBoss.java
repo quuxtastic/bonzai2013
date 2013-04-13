@@ -12,10 +12,8 @@ public class TheBoss {
 		this.farmhandList  = farmhandList;
 		this.states = new HashMap<Integer,STATES>();
 		this.pathfinder = new Pathfinder();
-		for (Integer i = 0;i<this.farmhandList.size();++i){
-			states.put(i, STATES.NOSTATE);
-		}
-		
+		for (Integer i = 0;i<this.farmhandList.size();++i)
+			states.put(i, STATES.NOSTATE);		
 	}//end constructor
 	
 	public void getNext(){
