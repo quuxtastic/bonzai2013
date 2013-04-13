@@ -30,27 +30,67 @@ public class TheBoss {
 		Collection<FarmhandAction> actions = new ArrayList<FarmhandAction>(); 
 		for(int i = 0;i<hands.size(); ++i){
 			FarmhandAction fa;
-			if(states.get(i) == null || states.get(i) == STATES.CHILLIN){
-				//TODO:Calculate closest duck vs. closest egg
-				
+			STATES myState = states.get(i);
+			if(myState == null || states.get(i) == STATES.CHILLIN){
+				//First try to duck or egg
+				STATES newState = duckOrEgg(i, state); 
 				//otherwise doBaleing
-				
+				newState = (newState == null) ? STATES.BALEING : newState;
+				states.put(i, newState);
 			}else if(states.get(i) == STATES.DUCKING){
-			//	 = doDucking(i, state);
-				actions.add(doDucking(i, state));
+				//Ducking
+				fa = doDucking(i, state);
+			}else if(states.get(i) == STATES.EGGING){
+				//Egging
+				fa = seekItem(i, state, Type.Egg);
+			}else{
+				//Baleing				
+				fa = doBaleing(i,state);
 			}
-			
-			actions.add(fa);
 		}
 		return actions;
 	}//end process
+
+
+	/**
+	 * 
+	 * @param i
+	 * @param state
+	 * @return 1 for duck 2 for egg
+	 */
+	private STATES duckOrEgg(int i, GameState state){
+		Farmhand hand = state.getMyFarmhands().get(i);
+		//points for egg = duckPoints*0.7
+		double scoreFactor = .7;
+		//get closest of each
+		Duck duck = getClosestDuck(hand, state);
+		Item item = getClosestItem(hand, state, Type.Egg);
+
+		Pathfinder.PathResult duckPath = pathfinder.nextPathNode(hand.getPosition(), duck.getPosition(), state);
+		Pathfinder.PathResult eggPath = pathfinder.nextPathNode(hand.getPosition(), item.getPosition(), state);
+		double duckScore = (duckPath == null)? 0 : duckPath.cost;
+		double itemScore = (eggPath == null)? 0: eggPath.cost * scoreFactor;
+		if(duckScore == 0 && itemScore == 0){ 
+			log("There are no ducks OR eggs!");
+			return null;
+		}
+		else{
+			STATES stateFinal = (itemScore >= duckScore)? STATES.EGGING : STATES.DUCKING;
+			log("worker<"+i+"> going "+ stateFinal);
+			return stateFinal;
+		}
+
+	}
 
 	private FarmhandAction doDucking(Integer i, GameState state){
 		Farmhand hand = state.getMyFarmhands().get(i);
 		if(hand.getHeldObject() instanceof Duck){
 			/* Farmhand has duck, run home */
-			if(isAdjacent(hand.getPosition(),state.getMyBase().getPosition()))
+			if(isAdjacent(hand.getPosition(),state.getMyBase().getPosition())){
 				hand.dropItem(state.getMyBase().getPosition());
+				log("Got that duck, now for some chillin");
+				states.put(i, STATES.CHILLIN);
+			}
 			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),state.getMyBase().getPosition(),state);
 			return hand.move(p.nextNode);
 		}else{ 
@@ -66,7 +106,7 @@ public class TheBoss {
 				/*otherwise aquire new target*/
 				targets.put(i,closestDuck);
 			}				
-			
+
 			/* Continue moving towards the target*/
 			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),targets.get(i).getPosition(),state);
 			return hand.move(p.nextNode);
@@ -77,8 +117,11 @@ public class TheBoss {
 		Farmhand hand = state.getMyFarmhands().get(i);
 		if(hand.getHeldObject() instanceof Item && ((Item)hand.getHeldObject()).getType().equals(itemType)){
 			/* Farmhand has item, run home */
-			if(isAdjacent(hand.getPosition(),state.getMyBase().getPosition()))
+			if(isAdjacent(hand.getPosition(),state.getMyBase().getPosition())){
 				hand.dropItem(state.getMyBase().getPosition());
+				log("Got that duck, now for some chillin");
+				states.put(i, STATES.CHILLIN);
+			}
 			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),state.getMyBase().getPosition(),state);
 			return hand.move(p.nextNode);
 		}else{ 
@@ -94,13 +137,13 @@ public class TheBoss {
 				/*otherwise aquire new target*/
 				itemTargets.put(i,closestItem);
 			}				
-			
+
 			/* Continue moving towards the target*/
 			Pathfinder.PathResult p = pathfinder.nextPathNode(hand.getPosition(),targets.get(i).getPosition(),state);
 			return hand.move(p.nextNode);
 		}		
 	}
-	
+
 	private FarmhandAction doBaleing(Integer i, GameState gs){
 		Tile myBase = gs.getMyBase();
 		Farmhand fh = gs.getFarmhands().get(i);
@@ -113,7 +156,7 @@ public class TheBoss {
 		if(item != null && item.getType() == Type.Pitchfork){
 			// do I have a bale?
 			if(item.getFull()){
-				
+
 			}
 		}else{
 			//Am I at the base?
@@ -136,7 +179,7 @@ public class TheBoss {
 	private boolean isAdjacent(Position p1, Position p2){
 		return isAdjacent(p1.getX(),p1.getY(), p2.getX(),p2.getY());
 	}
-	
+
 	private boolean isAdjacent(int x, int y, int x2, int y2) {
 		return Math.abs(x-x2) <= 1 && Math.abs(y-y2) <=1;
 	}
@@ -145,8 +188,8 @@ public class TheBoss {
 		Farmhand hand = state.getMyFarmhands().get(i);
 		hand.shout(FamilyFreindlyExplitives.getRandomExplitive());
 	}
-	
-	
+
+
 	/**
 	 * Gets the closest duck
 	 * 
@@ -168,7 +211,7 @@ public class TheBoss {
 		}
 		return bestDuck;
 	}
-	
+
 	private Item getClosestItem(Farmhand hand, GameState state, Type itemType){
 		Item bestItem = null;
 		double bestC = Double.MAX_VALUE;
@@ -183,6 +226,10 @@ public class TheBoss {
 		}
 		return bestItem;
 	}
+	
+	private void log(String s){
+		System.out.println(s);
+	}//end log
 
 	private enum STATES{
 		CHILLIN,
