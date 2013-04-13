@@ -157,8 +157,14 @@ public class TheBoss {
 		if(item != null && item.getType() == Type.Pitchfork){
 			// do I have a bale?
 			if(item.getFull()){
-				//go home kid
-				return fh.move(pathfinder.nextPathNode(fh.getPosition(), myBase.getPosition(), gs).nextNode);
+				// am i home?
+				if(isAdjacent(fh.getPosition(), myBase.getPosition())){
+					//sell bale
+					return fh.sell();
+				}else{
+					//go home kid
+					return fh.move(pathfinder.nextPathNode(fh.getPosition(), myBase.getPosition(), gs).nextNode);
+				}
 			}else{
 				//1800getabale
 				for(int i = 0; i < gs.getFarmWidth(); i++){
@@ -168,7 +174,7 @@ public class TheBoss {
 						}
 					}
 				}
-				// go on a walk to find a bale
+				//XXX go on a walk to find a bale
 
 			}
 		}else{
