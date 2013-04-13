@@ -23,6 +23,7 @@ public class TheBoss{
 		this.states = new HashMap<Integer,STATES>();
 		//this.pathfinder = pathfinder;
 		for (Integer i = 0;i<state.getMyFarmhands().size();++i){
+			System.out.println(state+"ssss");
 			pathfinders.put(i, new AStarPathfinder(state,state.getMyFarmhands().get(i)));
 			states.put(i, STATES.CHILLIN);
 		}
@@ -195,12 +196,12 @@ public class TheBoss{
 				for(int i = 0; i < gs.getFarmWidth(); i++){
 					for(int j = 0; j < gs.getFarmHeight(); j++){
 						if(gs.getTile(j, i).getTileState().equals(Tile.State.Straw)){
-							return fh.move(pathfinders.get(i).nextPathNode(fh.getPosition(), myBase.getPosition(), gs).nextNode);
+							return fh.move(pathfinders.get(fhIndex).nextPathNode(fh.getPosition(), myBase.getPosition(), gs).nextNode);
 						}
 					}
 				}
 				//XXX go on a walk to find a bale
-				return fh.move(pathfinder.nextPathNode(fh.getPosition(), new Position(0,0), gs).nextNode);
+				return fh.move(pathfinders.get(fhIndex).nextPathNode(fh.getPosition(), new Position(0,0), gs).nextNode);
 			}
 		}else{
 			//Am I at the base?
@@ -215,9 +216,12 @@ public class TheBoss{
 					//dude, youre getting a pitchfork
 					return fh.purchase(Type.Pitchfork);
 				}
+			}else{
+				// go to base:
+				return fh.move(getPFForHand(gs, fh).nextPathNode(fh.getPosition(), myBase.getPosition(), gs).nextNode);
 			}
 		}
-		return fh.shout("I'M STUPID");
+		//return fh.shout("I'M STUPID");
 	}
 
 	private boolean isAdjacent(Position p1, Position p2){
