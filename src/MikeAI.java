@@ -14,8 +14,11 @@ public class MikeAI implements AI {
 		
 	@Override
 	public Collection<FarmhandAction> turn(GameState state) {
-		if(this.theBoss == null)
-			this.theBoss = new TheBoss();
+		//INIT
+		if(this.theBoss == null) 
+			this.theBoss = new TheBoss(state);
+		
+		
 		
 		// The set of actions to perform
 		LinkedList<FarmhandAction> actions = new LinkedList<FarmhandAction>();
