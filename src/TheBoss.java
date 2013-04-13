@@ -26,6 +26,9 @@ public class TheBoss {
 		Collection<FarmhandAction> actions = new ArrayList<FarmhandAction>(); 
 		for(int i = 0;i<hands.size(); ++i){
 			if(states.get(i) == null || states.get(i) == STATES.NOSTATE){
+				//TODO:Calculate closest duck vs. closest egg
+				
+				//otherwise doBaleing
 				
 			}else if(states.get(i) == STATES.DUCKING)
 				System.out.println("yourmom");
